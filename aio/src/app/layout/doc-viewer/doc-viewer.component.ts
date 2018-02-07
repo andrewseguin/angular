@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { Title, Meta } from '@angular/platform-browser';
 
 import { Observable } from 'rxjs/Observable';

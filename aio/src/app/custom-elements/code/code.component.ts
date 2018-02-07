@@ -4,8 +4,11 @@ import { PrettyPrinter } from './pretty-printer.service';
 import { CopierService } from 'app/shared/copier.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-/** Maximum number of lines that an example can display without line numbers. */
-const MAX_LINES_WITHOUT_LINE_NUMBERS = 10;
+/**
+ * If linenums is not set, this is the default maximum number of lines that
+ * an example can display without line numbers.
+ */
+const DEFAULT_LINE_NUMS_COUNT = 10;
 
 /**
  * Formatted Code Block
@@ -75,13 +78,10 @@ export class CodeComponent {
     this.ariaLabel = this.title ? `Copy code snippet from ${this.title}` : '';
   }
   get title(): string { return this._title; }
-  _title: string;
+  private _title: string;
 
   /** The element in the template that will display the formatted code. */
   @ViewChild('codeContainer') codeContainer: ElementRef;
-
-  /** The element in the template that will display the formatted code. */
-  @ViewChild('content') content: ElementRef;
 
   constructor(
     private snackbar: MatSnackBar,
@@ -114,6 +114,8 @@ export class CodeComponent {
 
   /** Sets the innerHTML of the code container to the provided code string. */
   private setCodeHtml(formattedCode: string) {
+    // **Security:** Code example content is provided by docs authors and as such its considered to
+    // be safe for innerHTML purposes.
     this.codeContainer.nativeElement.innerHTML = formattedCode;
   }
 
@@ -149,14 +151,12 @@ export class CodeComponent {
       this.linenums;
 
     // if no linenums, enable line numbers if more than one line
-    return linenums == null || linenums === undefined || isNaN(linenums as number) ?
-        (code.match(/\n/g) || []).length > MAX_LINES_WITHOUT_LINE_NUMBERS : linenums;
+    return linenums == null || isNaN(linenums as number) ?
+        (code.match(/\n/g) || []).length > DEFAULT_LINE_NUMS_COUNT : linenums;
   }
 }
 
 function leftAlign(text: string): string {
-  if (!text) { return ''; }
-
   let indent = Number.MAX_VALUE;
 
   const lines = text.split('\n');

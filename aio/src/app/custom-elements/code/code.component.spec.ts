@@ -1,6 +1,6 @@
 import { Component, ViewChild, AfterViewInit } from '@angular/core';
 import { async, ComponentFixture, TestBed } from '@angular/core/testing';
-import { MatSnackBarModule, MatSnackBar } from '@angular/material';
+import { MatSnackBar } from '@angular/material';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -23,7 +23,6 @@ const smallMultiLineCode = `
 const bigMultiLineCode = smallMultiLineCode + smallMultiLineCode + smallMultiLineCode;
 
 describe('CodeComponent', () => {
-  let codeComponent: CodeComponent;
   let hostComponent: HostComponent;
   let fixture: ComponentFixture<HostComponent>;
 
@@ -41,7 +40,7 @@ describe('CodeComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [ MatSnackBarModule, NoopAnimationsModule, CodeModule ],
+      imports: [ NoopAnimationsModule, CodeModule ],
       declarations: [ HostComponent ],
       providers: [
         PrettyPrinter,
@@ -57,7 +56,6 @@ describe('CodeComponent', () => {
   beforeEach(async(() => {
     fixture = TestBed.createComponent(HostComponent);
     hostComponent = fixture.componentInstance;
-    codeComponent = hostComponent.codeComponent;
 
     fixture.detectChanges();
   }));

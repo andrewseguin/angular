@@ -52,7 +52,7 @@ export class CodeExampleComponent implements AfterViewInit {
     };
   }
   get title(): string { return this._title; }
-  _title: string;
+  private _title: string;
 
   @Input()
   set path(path: string) {
@@ -60,7 +60,7 @@ export class CodeExampleComponent implements AfterViewInit {
     this.isAvoid = this.path.indexOf('.avoid.') !== -1;
   }
   get path(): string { return this._path; }
-  _path = '';
+  private _path = '';
 
   @Input()
   set hideCopy(hideCopy: boolean) {
@@ -68,7 +68,7 @@ export class CodeExampleComponent implements AfterViewInit {
     this._hideCopy = hideCopy != null && `${hideCopy}` !== 'false';
   }
   get hideCopy(): boolean { return this._hideCopy; }
-  _hideCopy: boolean;
+  private _hideCopy: boolean;
 
   @Input('hide-copy')
   set hyphenatedHideCopy(hideCopy: boolean) {

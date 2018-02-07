@@ -16,12 +16,12 @@ import { registerAsCustomElements } from '@angular/elements';
 
     // This could be used directly by the ElementsLoader but it is injected so that it can
     // be faked in tests.
-    { provide: REGISTER_AS_CUSTOM_ELEMENTS_API, useValue: registerAsCustomElements},
+    { provide: REGISTER_AS_CUSTOM_ELEMENTS_API, useValue: registerAsCustomElements },
 
     // Providing these routes as a signal to the build system that these modules should be
     // registered as lazy-loadable.
     // TODO(andrewjs): Provide first-class support for providing this.
-    {provide: ROUTES, useValue: ELEMENT_MODULE_PATHS_AS_ROUTES, multi: true},
+    { provide: ROUTES, useValue: ELEMENT_MODULE_PATHS_AS_ROUTES, multi: true },
   ],
 })
 export class CustomElementsModule { }

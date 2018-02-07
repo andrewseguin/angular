@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, ViewChild, NO_ERRORS_SCHEMA } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Logger } from 'app/shared/logger.service';
@@ -16,7 +15,7 @@ describe('CodeTabsComponent', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       declarations: [ HostComponent ],
-      imports: [ CommonModule, CodeTabsModule, NoopAnimationsModule ],
+      imports: [ CodeTabsModule, NoopAnimationsModule ],
       schemas: [ NO_ERRORS_SCHEMA ],
       providers: [
        { provide: Logger, useClass: MockLogger },
