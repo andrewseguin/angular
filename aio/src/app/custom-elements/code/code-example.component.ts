@@ -74,6 +74,11 @@ export class CodeExampleComponent implements AfterViewInit {
     this.hidecopy = hidecopy;
   }
 
+  @Input('hideCopy')
+  set capitalizedHideCopy(hidecopy: boolean) {
+    this.hidecopy = hidecopy;
+  }
+
   @HostBinding('class.avoidFile') isAvoid = false;
 
   @ViewChild('content') content: ElementRef;
