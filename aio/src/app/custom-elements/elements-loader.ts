@@ -42,12 +42,12 @@ export class ElementsLoader {
   private load(selector: string) {
     const modulePath = this.unregisteredElements.get(selector)!;
     return this.moduleFactoryLoader.load(modulePath!)
-      .then((factory: NgModuleFactory<WithCustomElement>) => {
-        const moduleRef = factory.create(this.moduleRef.injector);
+      .then((ngModuleFactory: NgModuleFactory<WithCustomElement>) => {
+        const moduleRef = ngModuleFactory.create(this.moduleRef.injector);
         const resolver = moduleRef.componentFactoryResolver;
-        const compFactory = resolver.resolveComponentFactory(moduleRef.instance.customElement);
+        const componentFactory = resolver.resolveComponentFactory(moduleRef.instance.customElement);
 
-        const def: any = this.createNgElementConstructor(compFactory);
+        const def: any = this.createNgElementConstructor(componentFactory, ngModuleFactory);
         customElements!.define(def.is, def);
       });
   }

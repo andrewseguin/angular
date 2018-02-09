@@ -1,5 +1,5 @@
 import { BrowserModule } from '@angular/platform-browser';
-import { ErrorHandler, NgModule } from '@angular/core';
+import { ErrorHandler, NgModule, ApplicationRef } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -136,9 +136,13 @@ export const svgIconProviders = [
   entryComponents: [ TocComponent ],
   bootstrap: [ AppComponent ]
 })
-export class AppModule {}
+export class AppModule {
+  constructor(appRef: ApplicationRef) {
+    console.log(appRef);
+  }
+}
 
 import('app/custom-elements/api/index').then((module: any) => {
   console.log(module)
-  customElements!.define(module.default.is, module.default);
+  //customElements!.define(module.default.is, module.default);
 });

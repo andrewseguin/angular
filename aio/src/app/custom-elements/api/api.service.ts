@@ -42,7 +42,6 @@ export class ApiService implements OnDestroy {
   * API sections is an array of Angular top modules and metadata about their API documents (items).
    */
   get sections() {
-
     if (this.firstTime) {
       this.firstTime = false;
       this.fetchSections(); // TODO: get URL for fetchSections by configuration?

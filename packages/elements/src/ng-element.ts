@@ -7,11 +7,10 @@
  */
 
 import {
-  ComponentFactory, ComponentRef, EventEmitter, Injector, NgModuleFactory, OnChanges,
-  SimpleChange, SimpleChanges, RendererFactory2, StaticProvider, Sanitizer, ErrorHandler
+  ComponentFactory, ComponentRef, EventEmitter, NgModuleFactory, OnChanges,
+  SimpleChange, SimpleChanges, RendererFactory2, StaticProvider, Sanitizer, ErrorHandler,
 } from '@angular/core';
 import {Subscription} from 'rxjs/Subscription';
-
 import {extractProjectableNodes} from './extract-projectable-nodes';
 import {createCustomEvent, getComponentName, isFunction, scheduler, strictEquals, throwError} from './utils';
 import {platformBrowser} from '@angular/platform-browser';

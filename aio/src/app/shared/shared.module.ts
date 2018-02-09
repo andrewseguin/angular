@@ -14,6 +14,6 @@ import { SelectComponent } from './select/select.component';
   declarations: [
     SearchResultsComponent,
     SelectComponent
-  ]
+  ],
 })
 export class SharedModule {}

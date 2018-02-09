@@ -1,4 +1,4 @@
-<div class="l-flex-wrap api-filter">
+<div class="l-flex-wrap api-filter" (click)="changeDetectorRef.detectChanges()">
 
   <aio-select (change)="setType($event.option)"
               [options]="types"

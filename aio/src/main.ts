@@ -15,4 +15,6 @@ platformBrowserDynamic().bootstrapModule(AppModule).then(ref => {
       (navigator as any).serviceWorker.register('/worker-basic.min.js');
     });
   }
+
+  console.log(ref);
 });
