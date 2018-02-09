@@ -10,7 +10,7 @@ import {CompilerFactory, Component, NgModule, NgModuleFactory, NgModuleRef, Plat
 import {BrowserModule, platformBrowser} from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import {NgElementImpl} from '../src/ng-element';
-import {registerAsCustomElements} from '../src/register-as-custom-elements';
+import {registerAsCustomElements} from '../src/register-as-custom-element';
 import {isFunction} from '../src/utils';
 import {patchEnv, restoreEnv, supportsCustomElements} from '../testing/index';
 

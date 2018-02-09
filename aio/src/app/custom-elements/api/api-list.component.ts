@@ -6,13 +6,12 @@
 * Can add/remove API entity links based on filter settings.
 */
 
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 
 import { Observable } from 'rxjs/Observable';
 import { ReplaySubject } from 'rxjs/ReplaySubject';
 import { combineLatest } from 'rxjs/observable/combineLatest';
 
-import { LocationService } from 'app/shared/location.service';
 import { ApiSection, ApiService } from './api.service';
 
 import { Option } from 'app/shared/select/select.component';
@@ -65,10 +64,8 @@ export class ApiListComponent implements OnInit {
   @ViewChild('filter') queryEl: ElementRef;
 
   constructor(
-    private apiService: ApiService,
-    private locationService: LocationService) { }
-
-  ngOnInit() {
+      private changeDetectorRef: ChangeDetectorRef,
+      private apiService: ApiService,) {
     this.filteredSections = combineLatest(
       this.apiService.sections,
       this.criteriaSubject,
@@ -76,6 +73,12 @@ export class ApiListComponent implements OnInit {
         return sections.filter(section => this.filterSection(section, criteria));
       }
     );
+  }
+
+  ngOnInit() {
+    // TODO(andrewjs): Had to add extra detectChanges to render the list.
+    this.changeDetectorRef.detectChanges();
+    this.filteredSections.subscribe(() => this.changeDetectorRef.detectChanges());
 
     this.initializeSearchCriteria();
   }
@@ -140,33 +143,9 @@ export class ApiListComponent implements OnInit {
 
   // Get initial search criteria from URL search params
   private initializeSearchCriteria() {
-    const {query, status, type} = this.locationService.search();
-
-    const q = (query || '').toLowerCase();
-    // Hack: can't bind to query because input cursor always forced to end-of-line.
-    this.queryEl.nativeElement.value = q;
-
-    this.status = this.statuses.find(x => x.value === status) || this.statuses[0];
-    this.type = this.types.find(x => x.value === type) || this.types[0];
-
-    this.searchCriteria = {
-      query: q,
-      status: this.status.value,
-      type: this.type.value
-    };
-
-    this.criteriaSubject.next(this.searchCriteria);
   }
 
   private setLocationSearch() {
-    const {query, status, type} = this.searchCriteria;
-    const params = {
-      query:  query ? query : undefined,
-      status: status !== 'all' ? status : undefined,
-      type:   type   !== 'all' ? type   : undefined
-    };
-
-    this.locationService.setSearch('API Search', params);
   }
 
   private setSearchCriteria(criteria: SearchCriteria) {

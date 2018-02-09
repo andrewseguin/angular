@@ -2,7 +2,7 @@ import { NgModuleFactoryLoader, Type } from '@angular/core';
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
 import { ElementsLoader, REGISTER_AS_CUSTOM_ELEMENTS_API } from './elements-loader';
-import { ELEMENT_MODULE_PATHS_TOKEN, WithCustomElements } from './element-registry';
+import { ELEMENT_MODULE_PATHS_TOKEN, WithCustomElement } from './element-registry';
 
 const FAKE_MODULE_PATHS = new Map([
   ['element-a-selector', 'element-a-module-path']
@@ -31,7 +31,7 @@ describe('ElementsLoader', () => {
     // Setup stubs for the fakes - should end up with a module containing a component to register.
     fakeModuleFactoryLoader.load.and.returnValue(Promise.resolve(fakeModuleFactory));
     fakeModuleFactory.create.and.returnValue(fakeModuleRef);
-    fakeModule.customElements = [FakeElementAComponent];
+    fakeModule.customElement = [FakeElementAComponent];
 
     const injector = TestBed.configureTestingModule({
       providers: [
@@ -103,7 +103,7 @@ describe('ElementsLoader', () => {
 
 class FakeElementAComponent { }
 
-class FakeModule implements WithCustomElements {
+class FakeModule implements WithCustomElement {
   customElements: Type<any>[];
 }
 

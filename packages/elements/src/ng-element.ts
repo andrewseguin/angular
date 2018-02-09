@@ -6,14 +6,29 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ApplicationRef, ComponentFactory, ComponentRef, EventEmitter, Injector, OnChanges, SimpleChange, SimpleChanges} from '@angular/core';
+import {
+  ComponentFactory, ComponentRef, EventEmitter, Injector, NgModuleFactory, OnChanges,
+  SimpleChange, SimpleChanges, RendererFactory2, StaticProvider, Sanitizer, ErrorHandler
+} from '@angular/core';
 import {Subscription} from 'rxjs/Subscription';
 
 import {extractProjectableNodes} from './extract-projectable-nodes';
-import {NgElementApplicationContext} from './ng-element-application-context';
 import {createCustomEvent, getComponentName, isFunction, scheduler, strictEquals, throwError} from './utils';
+import {platformBrowser} from '@angular/platform-browser';
+import {SimpleRendererFactory} from './renderer';
 
 export type NgElementWithProps<T, P> = NgElement<T>& {[property in keyof P]: P[property]};
+
+export const sanitizer: Sanitizer = {
+  sanitize: (ctx, v:any) => v
+}
+
+const STATIC_PROVIDERS: StaticProvider[] = [
+  {provide: Sanitizer, useValue: sanitizer},
+  {provide: RendererFactory2, useClass: SimpleRendererFactory, deps: []},
+  {provide: ErrorHandler, useValue: null},
+];
+const platformRef = platformBrowser(STATIC_PROVIDERS);
 
 export interface NgElement<T> extends HTMLElement {
   ngElement: NgElement<T>|null;
@@ -88,9 +103,8 @@ export abstract class NgElementImpl<T> extends HTMLElement implements NgElement<
   private cancelDestruction: (() => void)|null = null;
 
   constructor(
-      private appContext: NgElementApplicationContext,
       private componentFactory: ComponentFactory<T>, private readonly inputs: NgElementInput[],
-      private readonly outputs: NgElementOutput[]) {
+      private readonly outputs: NgElementOutput[], private moduleFactory?: NgModuleFactory<any>,) {
     super();
   }
 
@@ -134,30 +148,28 @@ export abstract class NgElementImpl<T> extends HTMLElement implements NgElement<
           `because the element is already upgraded to component '${existingComponentName}'.`);
     }
 
-    this.appContext.runInNgZone(() => {
-      this.lifecyclePhase = NgElementLifecyclePhase.connected;
-      const cThis = (this as any as NgElementConnected<T>);
+    this.lifecyclePhase = NgElementLifecyclePhase.connected;
+    const cThis = (this as any as NgElementConnected<T>);
 
-      const childInjector = Injector.create([], cThis.appContext.injector);
-      const projectableNodes =
-          extractProjectableNodes(cThis.host, cThis.componentFactory.ngContentSelectors);
-      cThis.componentRef =
-          cThis.componentFactory.create(childInjector, projectableNodes, cThis.host);
-      cThis.implementsOnChanges =
-          isFunction((cThis.componentRef.instance as any as OnChanges).ngOnChanges);
 
-      cThis.initializeInputs();
-      cThis.initializeOutputs();
-      cThis.detectChanges();
+    const moduleRef = this.moduleFactory!.create(platformRef.injector);
+    const projectableNodes =
+        extractProjectableNodes(cThis.host, cThis.componentFactory.ngContentSelectors);
+    const resolver = moduleRef.componentFactoryResolver;
+    const factory = resolver.resolveComponentFactory(cThis.componentFactory.componentType);
+    cThis.componentRef = factory.create(moduleRef.injector, projectableNodes, cThis.host, moduleRef);
+    cThis.implementsOnChanges =
+        isFunction((cThis.componentRef.instance as any as OnChanges).ngOnChanges);
 
-      cThis.appContext.applicationRef.attachView(cThis.componentRef.hostView);
+    cThis.initializeInputs();
+    cThis.initializeOutputs();
+    cThis.detectChanges();
 
-      // Ensure `ngElement` is set on the host too (even for manually upgraded elements)
-      // in order to be able to detect that the element has been been upgraded.
-      cThis.ngElement = host.ngElement = cThis;
+    // Ensure `ngElement` is set on the host too (even for manually upgraded elements)
+    // in order to be able to detect that the element has been been upgraded.
+    cThis.ngElement = host.ngElement = cThis;
 
-      cThis.onConnected.emit();
-    });
+    cThis.onConnected.emit();
   }
 
   detach(): void { this.disconnectedCallback(); }
@@ -169,14 +181,12 @@ export abstract class NgElementImpl<T> extends HTMLElement implements NgElement<
 
     this.assertNotInPhase(NgElementLifecyclePhase.unconnected, 'detectChanges');
 
-    this.appContext.runInNgZone(() => {
-      const cThis = this as any as NgElementConnected<T>;
+    const cThis = this as any as NgElementConnected<T>;
 
-      cThis.changeDetectionScheduled = false;
+    cThis.changeDetectionScheduled = false;
 
-      cThis.callNgOnChanges();
-      cThis.componentRef.changeDetectorRef.detectChanges();
-    });
+    cThis.callNgOnChanges();
+    cThis.componentRef.changeDetectorRef.detectChanges();
   }
 
   disconnectedCallback(): void {
@@ -187,8 +197,7 @@ export abstract class NgElementImpl<T> extends HTMLElement implements NgElement<
 
     this.assertNotInPhase(NgElementLifecyclePhase.unconnected, 'disconnectedCallback');
 
-    const doDestroy = () => this.appContext.runInNgZone(() => this.destroy());
-    this.cancelDestruction = scheduler.schedule(doDestroy, NgElementImpl.DESTROY_DELAY);
+    this.cancelDestruction = scheduler.schedule(() => this.destroy(), NgElementImpl.DESTROY_DELAY);
   }
 
   getHost(): HTMLElement { return this.host; }

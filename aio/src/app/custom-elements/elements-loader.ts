@@ -1,16 +1,14 @@
 import {
   Inject,
-  Injectable,
-  InjectionToken,
-  NgModuleFactory,
+  Injectable, NgModuleRef,
+  InjectionToken, NgModuleFactory,
   NgModuleFactoryLoader,
-  NgModuleRef
 } from '@angular/core';
-import { ELEMENT_MODULE_PATHS_TOKEN, WithCustomElements } from './element-registry';
+import {ELEMENT_MODULE_PATHS_TOKEN, WithCustomElement} from './element-registry';
 
 /** Injection token to provide Angular's custom element registration function. */
-export const REGISTER_AS_CUSTOM_ELEMENTS_API =
-    new InjectionToken('aio/register-as-custom-elements');
+export const CREATE_NG_ELEMENT_CONSTRUCTOR =
+  new InjectionToken('aio/register-as-custom-element');
 
 @Injectable()
 export class ElementsLoader {
@@ -19,7 +17,7 @@ export class ElementsLoader {
 
   constructor(private moduleFactoryLoader: NgModuleFactoryLoader,
               private moduleRef: NgModuleRef<any>,
-              @Inject(REGISTER_AS_CUSTOM_ELEMENTS_API) private registerAsCustomElements,
+              @Inject(CREATE_NG_ELEMENT_CONSTRUCTOR) private createNgElementConstructor,
               @Inject(ELEMENT_MODULE_PATHS_TOKEN) elementModulePaths) {
     this.unregisteredElements = new Map(elementModulePaths);
   }
@@ -31,24 +29,26 @@ export class ElementsLoader {
    */
   loadContainingCustomElements(element: HTMLElement) {
     Array.from(this.unregisteredElements.keys())
-        .filter(s => element.querySelector(s))
-        .forEach(s => {
-          this.load(s)
-              .then(() => this.unregisteredElements.delete(s))
-              .catch(err => { throw Error(`Failed to load element ${s} with error ${err}`); });
-        });
+      .filter(s => element.querySelector(s))
+      .forEach(s => {
+        this.load(s)
+          .then(() => this.unregisteredElements.delete(s))
+          .catch(err => { throw Error(`Failed to load element ${s} with error ${err}`); });
+      });
+
   }
 
   /** Loads the element's module and registers it as a custom element. */
   private load(selector: string) {
-    const modulePath = this.unregisteredElements.get(selector);
+    const modulePath = this.unregisteredElements.get(selector)!;
     return this.moduleFactoryLoader.load(modulePath!)
-        .then((factory: NgModuleFactory<WithCustomElements>) => {
-          const moduleRef = factory.create(this.moduleRef.injector);
-          const customElements = moduleRef.instance.customElements;
-          const bootstrapFn = () => Promise.resolve(moduleRef);
+      .then((factory: NgModuleFactory<WithCustomElement>) => {
+        const moduleRef = factory.create(this.moduleRef.injector);
+        const resolver = moduleRef.componentFactoryResolver;
+        const compFactory = resolver.resolveComponentFactory(moduleRef.instance.customElement);
 
-          this.registerAsCustomElements(customElements, bootstrapFn);
-        });
+        const def: any = this.createNgElementConstructor(compFactory);
+        customElements!.define(def.is, def);
+      });
   }
 }

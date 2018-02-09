@@ -136,5 +136,9 @@ export const svgIconProviders = [
   entryComponents: [ TocComponent ],
   bootstrap: [ AppComponent ]
 })
-export class AppModule {
-}
+export class AppModule {}
+
+import('app/custom-elements/api/index').then((module: any) => {
+  console.log(module)
+  customElements!.define(module.default.is, module.default);
+});
