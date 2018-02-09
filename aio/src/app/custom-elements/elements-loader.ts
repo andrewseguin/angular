@@ -29,18 +29,20 @@ export class ElementsLoader {
    * the browser. Custom elements that are registered will be removed from the list of unregistered
    * elements so that they will not be queried in subsequent calls.
    */
-  loadContainingCustomElements(element: HTMLElement) {
-    Array.from(this.unregisteredElements.keys())
+  loadContainingCustomElements(element: HTMLElement): Promise<any> {
+    const loadPromises = Array.from(this.unregisteredElements.keys())
         .filter(s => element.querySelector(s))
-        .forEach(s => {
-          this.load(s)
+        .map(s => {
+          return this.load(s)
               .then(() => this.unregisteredElements.delete(s))
               .catch(err => { throw Error(`Failed to load element ${s} with error ${err}`); });
         });
+
+    return Promise.all(loadPromises);
   }
 
   /** Loads the element's module and registers it as a custom element. */
-  private load(selector: string) {
+  private load(selector: string): Promise<any> {
     const modulePath = this.unregisteredElements.get(selector);
     return this.moduleFactoryLoader.load(modulePath!)
         .then((factory: NgModuleFactory<WithCustomElements>) => {
@@ -48,7 +50,7 @@ export class ElementsLoader {
           const customElements = moduleRef.instance.customElements;
           const bootstrapFn = () => Promise.resolve(moduleRef);
 
-          this.registerAsCustomElements(customElements, bootstrapFn);
+          return this.registerAsCustomElements(customElements, bootstrapFn);
         });
   }
 }

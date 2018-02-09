@@ -30,7 +30,6 @@ import { CodeComponent } from './code.component';
               [title]="title">
     </aio-code>
   `,
-  styles: [ `:host { display: block }` ],
 })
 export class CodeExampleComponent implements AfterViewInit {
   classes: {};

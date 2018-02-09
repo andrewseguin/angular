@@ -134,7 +134,7 @@ export class DocViewerComponent implements OnDestroy {
         //           and is considered to be safe.
         .do(() => this.nextViewContainer.innerHTML = doc.contents || '')
         .do(() => addTitleAndToc = this.prepareTitleAndToc(this.nextViewContainer, doc.id))
-        .do(() => this.elementsLoader.loadContainingCustomElements(this.nextViewContainer))
+        .switchMap(() => this.elementsLoader.loadContainingCustomElements(this.nextViewContainer))
         .do(() => this.docReady.emit())
         .switchMap(() => this.swapViews(addTitleAndToc))
         .do(() => this.docRendered.emit())

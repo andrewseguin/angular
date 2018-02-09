@@ -40,7 +40,6 @@ export interface TabInfo {
       </mat-tab> 
     </mat-tab-group>
   `,
-  styles: [ `:host { display: block }` ],
 })
 export class CodeTabsComponent implements OnInit, AfterViewInit {
   tabs: TabInfo[];
