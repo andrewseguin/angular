@@ -43,15 +43,12 @@
   {% for member in members %}{% if not member.internal %}
     {$ renderMemberDetail(member, itemClass) $}
     {% if member.overloads.length %}
-    <details class="overloads">
-      <summary>Overloads</summary>
-      <div class="detail-contents">
-        {% for overload in member.overloads %}
-        {$ renderMemberDetail(overload, itemClass + '-overload') $}
-        {% if not loop.last %}<hr>{% endif %}
-        {% endfor %}
-      </div>
-    </details>
+    <expandable-section title="Overloads">
+      {% for overload in member.overloads %}
+      {$ renderMemberDetail(overload, itemClass + '-overload') $}
+      {% if not loop.last %}<hr>{% endif %}
+      {% endfor %}
+    </expandable-section>
     {% endif %}
     {% if not loop.last %}<hr class="hr-margin">{% endif %}
   {% endif %}{% endfor %}

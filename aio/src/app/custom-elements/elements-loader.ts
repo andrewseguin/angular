@@ -42,7 +42,8 @@ export class ElementsLoader {
   }
 
   /** Loads the element's module and registers it as a custom element. */
-  private load(selector: string): Promise<any> {
+  load(selector: string): Promise<any> {
+    console.log('Loading', selector);
     const modulePath = this.unregisteredElements.get(selector);
     return this.moduleFactoryLoader.load(modulePath!)
         .then((factory: NgModuleFactory<WithCustomElements>) => {

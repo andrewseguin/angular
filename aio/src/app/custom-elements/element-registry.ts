@@ -35,6 +35,10 @@ export const ELEMENT_MODULE_PATHS_AS_ROUTES = [
   {
     selector: 'code-example',
     loadChildren: './code/code-example.module#CodeExampleModule'
+  },
+  {
+    selector: 'expandable-section',
+    loadChildren: './expandable-section/expandable-section.module#ExpandableSectionModule'
   }
 ];
 

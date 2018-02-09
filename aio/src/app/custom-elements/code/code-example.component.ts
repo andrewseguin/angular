@@ -26,7 +26,7 @@ import { CodeComponent } from './code.component';
               [linenums]="linenums" 
               [path]="path" 
               [region]="region"  
-              [hideCopy]="hideCopy" 
+              [hideCopy]="hidecopy" 
               [title]="title">
     </aio-code>
   `,
@@ -62,16 +62,16 @@ export class CodeExampleComponent implements AfterViewInit {
   private _path = '';
 
   @Input()
-  set hideCopy(hideCopy: boolean) {
+  set hidecopy(hidecopy: boolean) {
     // Coerce the boolean value.
-    this._hideCopy = hideCopy != null && `${hideCopy}` !== 'false';
+    this._hidecopy = hidecopy != null && `${hidecopy}` !== 'false';
   }
-  get hideCopy(): boolean { return this._hideCopy; }
-  private _hideCopy: boolean;
+  get hidecopy(): boolean { return this._hidecopy; }
+  private _hidecopy: boolean;
 
   @Input('hide-copy')
-  set hyphenatedHideCopy(hideCopy: boolean) {
-    this.hideCopy = hideCopy;
+  set hyphenatedHideCopy(hidecopy: boolean) {
+    this.hidecopy = hidecopy;
   }
 
   @HostBinding('class.avoidFile') isAvoid = false;
