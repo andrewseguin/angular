@@ -70,8 +70,6 @@ if (supportsCustomElements()) {
         const ParentClass = (Object as any).setPrototypeOf.$$shimmed ? HTMLElement : NgElementImpl;
 
         expect(e).toEqual(jasmine.any(ParentClass));
-        expect(e.getHost()).toBe(e);
-        expect(e.ngElement).toBe(e);
       });
 
       it('should pass `ApplicationRef` to the element', () => {

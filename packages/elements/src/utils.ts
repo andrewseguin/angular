@@ -18,20 +18,29 @@ const matches = elProto.matches || elProto.matchesSelector || elProto.mozMatches
 export const scheduler = {
   /**
    * Schedule a callback to be called after some delay.
+   *
+   * Returns a function that when executed will cancel the scheduled function.
    */
-  schedule(cb: () => void, delay: number): () =>
-      void{const id = window.setTimeout(cb, delay); return () => window.clearTimeout(id);},
+  schedule(taskFn: () => void, delay: number): () => void {
+    const id = window.setTimeout(taskFn, delay);
+    return () => window.clearTimeout(id);
+  },
 
   /**
    * Schedule a callback to be called before the next render.
    * (If `window.requestAnimationFrame()` is not available, use `scheduler.schedule()` instead.)
+   *
+   * Returns a function that when executed will cancel the scheduled function.
    */
-  scheduleBeforeRender(cb: () => void): () => void{
+  scheduleBeforeRender(taskFn: () => void): () => void {
     // TODO(gkalpak): Implement a better way of accessing `requestAnimationFrame()`
     //                (e.g. accounting for vendor prefix, SSR-compatibility, etc).
     if (typeof window.requestAnimationFrame === 'undefined') {
-      return scheduler.schedule(cb, 16);
-    } const id = window.requestAnimationFrame(cb);
+      const frameMs = 16;
+      return scheduler.schedule(taskFn, frameMs);
+    }
+
+    const id = window.requestAnimationFrame(taskFn);
     return () => window.cancelAnimationFrame(id);
   },
 };

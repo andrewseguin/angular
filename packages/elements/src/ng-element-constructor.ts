@@ -6,32 +6,48 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ComponentFactory, Injector} from '@angular/core';
+import {ComponentFactory} from '@angular/core';
 
-import {NgElementImpl, NgElementWithProps} from './ng-element';
-import {camelToKebabCase} from './utils';
+import {camelToKebabCase, createCustomEvent} from './utils';
+import {NgElementDelegateBase} from './ng-element-delegate';
+import {NgElementDelegateFactoryBase} from '@angular/elements/src/element-delegate';
 
 /**
  * Class constructor based on an Angular Component to be used for custom element registration.
  *
  * @experimental
  */
-export interface NgElementConstructor<T, P> {
+export interface NgElementConstructor<P> {
   readonly observedAttributes: string[];
-  new (): NgElementWithProps<T, P>;
+  new (): NgElement & WithProperties<P>;
 }
 
-/** Type to provide additional interface information to the NgElementConstructor. */
+/**
+ * Additional type information that can be added to the NgElement class for properties added based
+ * on the inputs and methods of the underlying component.
+ */
 type WithProperties<P> = {
   [property in keyof P]: P[property]
 };
+
+/**
+ * Represents an `NgElement` input.
+ * Similar to a `ComponentFactory` input (`{propName: string, templateName: string}`),
+ * except that `attrName` is derived by kebab-casing `templateName`.
+ */
+export interface NgElementInput {
+  propName: string;
+  attrName: string;
+}
 
 /**
  * Initialization configuration for the NgElementConstructor.
  *
  * @experimental
  */
-export interface NgElementConfig { injector: Injector; }
+export interface NgElementConfig {
+  delegateFactory: NgElementDelegateFactoryBase<T>;
+}
 
 /**
  * @whatItDoes Creates a custom element class based on an Angular Component. Takes a configuration
@@ -49,43 +65,61 @@ export interface NgElementConfig { injector: Injector; }
  */
 export function createNgElementConstructor<T, P>(
     componentFactory: ComponentFactory<T>, config: NgElementConfig): NgElementConstructor<T, P> {
+  // Convert input templateName properties to kebab-case attribute names and rename as `attrName`
   const inputs = componentFactory.inputs.map(({propName, templateName}) => ({
-                                               propName,
-                                               attrName: camelToKebabCase(templateName),
-                                             }));
-  const outputs = componentFactory.outputs.map(({propName, templateName}) => ({
-                                                 propName,
-                                                 eventName: templateName,
-                                               }));
+    propName,
+    attrName: camelToKebabCase(templateName),
+  }));
 
   // Note: According to the spec, this needs to be an ES2015 class
   // (i.e. not transpiled to an ES5 constructor function).
   // TODO(gkalpak): Document that if you are using ES5 sources you need to include a polyfill (e.g.
   //                https://github.com/webcomponents/custom-elements/blob/32f043c3a/src/native-shim.js).
-  class NgElementConstructorImpl extends NgElementImpl<T> {
+  class NgElement extends HTMLElement {
     static readonly observedAttributes = inputs.map(input => input.attrName);
 
-    static injector = config.injector;
+    private delegate: NgElementDelegateBase<T>;
 
-    constructor(injector: Injector) {
-      super(injector || NgElementConstructorImpl.injector, componentFactory, inputs, outputs);
+    constructor(delegateFactoryOverride: NgElementDelegateBase<T>) {
+      super();
+
+      const delegateFactory = delegateFactoryOverride || config.delegateFactory;
+      this.delegate = delegateFactory.create(componentFactory, inputs);
+      this.delegate.events.subscribe(e => {
+        const customEvent = createCustomEvent(this.ownerDocument, e.name, e.value);
+        this.dispatchEvent(customEvent);
+      });
+    }
+
+    attributeChangedCallback(
+        name: string, oldValue: string|null, newValue: string, namespace?: string): void {
+      const input = this.inputs.find(input => input.attrName === name) !;
+      this.delegate.setInputValue(input.propName, newValue);
+    }
+
+    connectedCallback(): void {
+      this.delegate.connect(this);
+    }
+
+    disconnectedCallback(): void {
+      this.delegate.disconnect();
     }
   }
 
   // Add getters and setters for each input defined on the Angular Component so that the input
   // changes can be known.
-  inputs.forEach(({propName}) => {
-    Object.defineProperty(NgElementConstructorImpl.prototype, propName, {
-      get: function(this: NgElementImpl<any>) { return this.getInputValue(propName); },
-      set: function(this: NgElementImpl<any>, newValue: any) {
-        this.setInputValue(propName, newValue);
+  componentFactory.inputs.forEach(({propName}) => {
+    Object.defineProperty(NgElement.prototype, propName, {
+      get: function(this: NgElement<any>) {
+        return this.delegate.getInputValue(propName);
+      },
+      set: function(this: NgElement<any>, newValue: any) {
+        this.delegate.setInputValue(propName, newValue);
       },
       configurable: true,
       enumerable: true,
     });
   });
 
-  return NgElementConstructorImpl as typeof NgElementConstructorImpl & {
-    new (): NgElementConstructorImpl&WithProperties<P>;
-  };
+  return NgElement as NgElementConstructor<P>;
 }
