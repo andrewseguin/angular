@@ -13,6 +13,9 @@ const globals = {
   '@angular/core': 'ng.core',
   '@angular/platform-browser': 'ng.platformBrowser',
   'rxjs/Subscription': 'Rx',
+  'rxjs/Observable': 'Rx',
+  'rxjs/observable/merge': 'Rx.Observable',
+  'rxjs/operator/map': 'Rx.Observable.prototype'
 };
 
 module.exports = {

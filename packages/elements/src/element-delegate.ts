@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {Observable} from 'rxjs/Observable';
-import {Injector} from '@angular/core';
-import {NgElementInput} from './ng-element-constructor';
 import {ComponentFactory} from '@angular/core';
 
 export interface NgElementDelegateEvent {
@@ -18,13 +16,12 @@ export interface NgElementDelegateEvent {
 export interface NgElementDelegateBase<T> {
   events: Observable<NgElementDelegateEvent>;
 
-  connect(): void;
+  connect(element: HTMLElement): void;
   disconnect(): void;
-  inputChanged(name: string, value: string): void;
+  getInputValue(propName: string): any;
+  setInputValue(propName: string, value: string): void;
 }
 
-export interface NgElementDelegateFactoryBase<T> {
-  create(componentFactory: ComponentFactory<T>,
-         inputs: NgElementInput[],
-         injector: Injector): NgElementDelegateBase<T>;
+export interface NgElementDelegateFactoryBase {
+  create<T>(componentFactory: ComponentFactory<T>): NgElementDelegateBase<T>;
 }

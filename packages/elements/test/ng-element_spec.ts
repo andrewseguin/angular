@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+/*
 import {AfterContentChecked, AfterContentInit, AfterViewChecked, AfterViewInit, ApplicationRef, Component, ComponentFactory, DoCheck, EventEmitter, Inject, Injector, Input, NgModule, NgModuleRef, NgZone, OnChanges, OnDestroy, OnInit, Output, SimpleChange, SimpleChanges, destroyPlatform} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
@@ -18,7 +19,6 @@ type WithFooBar = {
 };
 
 const selector = 'test-element';
-
 if (supportsCustomElements()) {
   describe('NgElement', () => {
     const DESTROY_DELAY = 10;
@@ -1040,3 +1040,4 @@ if (supportsCustomElements()) {
     customElements.define(selector, TestNgElement);
   });
 }
+*/

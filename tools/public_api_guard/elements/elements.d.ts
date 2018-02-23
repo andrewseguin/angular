@@ -1,15 +1,22 @@
 /** @experimental */
-export declare function createNgElementConstructor<T, P>(componentFactory: ComponentFactory<T>, config: NgElementConfig): NgElementConstructor<T, P>;
+export declare function createNgElementConstructor<T, P>(componentFactory: ComponentFactory<T>, config: NgElementConfig<T>): NgElementConstructor<P>;
 
 /** @experimental */
-export interface NgElementConfig {
-    injector: Injector;
+export interface NgElementConfig<T> {
+    delegateFactory: NgElementDelegateFactoryBase<T>;
+    getAttributeToPropertyInputs: (factory: ComponentFactory<any>) => Map<string, string>;
 }
 
 /** @experimental */
-export interface NgElementConstructor<T, P> {
+export interface NgElementConstructor<P> {
     readonly observedAttributes: string[];
-    new (): NgElementWithProps<T, P>;
+    new (): HTMLElement & WithProperties<P>;
+}
+
+/** @experimental */
+export declare class NgElementDelegateFactory<T> implements NgElementDelegateFactoryBase<T> {
+    constructor(injector: Injector);
+    create(componentFactory: ComponentFactory<T>): NgElementDelegate<T>;
 }
 
 /** @experimental */

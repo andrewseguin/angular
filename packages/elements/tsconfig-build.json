@@ -6,7 +6,8 @@
     "rootDir": ".",
     "paths": {
       "@angular/core": ["../../dist/packages/core"],
-      "@angular/platform-browser": ["../../dist/packages/platform-browser"]
+      "@angular/platform-browser": ["../../dist/packages/platform-browser"],
+      "rxjs/*": ["../../node_modules/rxjs/*"]
     },
     "outDir": "../../dist/packages/elements"
   },
