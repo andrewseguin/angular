@@ -70,14 +70,6 @@ export function createCustomEvent(doc: Document, name: string, detail: any): Cus
 }
 
 /**
- * Return the name of the component or the first line of its stringified version.
- */
-export function getComponentName(component: Type<any>): string {
-  return (component as any).overriddenName || component.name ||
-      component.toString().split('\n', 1)[0];
-}
-
-/**
  * Check whether the input is an `Element`.
  */
 export function isElement(node: Node): node is Element {
@@ -110,12 +102,4 @@ export function matchesSelector(element: Element, selector: string): boolean {
  */
 export function strictEquals(value1: any, value2: any): boolean {
   return value1 === value2 || (value1 !== value1 && value2 !== value2);
-}
-
-/**
- * Throw an error with the specified message.
- * (It provides a centralized place where it is easy to apply some change/behavior to all errors.)
- */
-export function throwError(message: string): void {
-  throw Error(message);
 }

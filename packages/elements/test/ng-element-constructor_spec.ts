@@ -22,63 +22,136 @@ import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import {createNgElementConstructor, NgElementConstructor} from '../src/ng-element-constructor';
 import {patchEnv, restoreEnv} from '../testing/index';
 import {
-  NgElementStrategyBase, NgElementStrategyEvent,
+  NgElementStrategyBase,
+  NgElementStrategyEvent,
   NgElementStrategyFactoryBase
 } from '../src/element-strategy';
 import {Subject} from 'rxjs/Subject';
+import {fakeAsync} from '@angular/core/testing';
 
 type WithFooBar = {
   fooFoo: string,
   barBar: string
 };
 
-fdescribe('createNgElementConstructor', () => {
-  let NgElementCtor: NgElementConstructor<WithFooBar>;
-  let factory: ComponentFactory<TestComponent>;
-  let strategyFactory: TestStrategyFactory;
+if(typeof customElements !== 'undefined') {
+  describe('createNgElementConstructor', () => {
+    let NgElementCtor: NgElementConstructor<WithFooBar>;
+    let factory: ComponentFactory<TestComponent>;
+    let strategy: TestStrategy;
+    let strategyFactory: TestStrategyFactory;
 
-  beforeAll(() => patchEnv());
-  beforeAll(done => {
-    destroyPlatform();
-    platformBrowserDynamic()
+    beforeAll(() => patchEnv());
+    beforeAll(done => {
+      destroyPlatform();
+      platformBrowserDynamic()
         .bootstrapModule(TestModule)
         .then(ref => {
           factory = ref.componentFactoryResolver.resolveComponentFactory(TestComponent);
           strategyFactory = new TestStrategyFactory();
+          strategy = strategyFactory.testStrategy;
           NgElementCtor = createNgElementConstructor(factory, {strategyFactory: strategyFactory});
+
+          // The `@webcomponents/custom-elements/src/native-shim.js` polyfill allows us to create
+          // new instances of the NgElement which extends HTMLElement, as long as we define it.
+          customElements.define('test-element', NgElementCtor);
         })
         .then(done, done.fail);
-  });
+    });
 
-  afterAll(() => destroyPlatform());
-  afterAll(() => restoreEnv());
+    afterAll(() => destroyPlatform());
+    afterAll(() => restoreEnv());
 
-  describe('observedAttributes', () => {
     it('should use a default strategy for converting component inputs', () => {
       expect(NgElementCtor.observedAttributes).toEqual(['foo-foo', 'barbar']);
     });
 
-    it('should be able to override which attributes are watched', () => {
-      const NgElementCtorWithChangedAttr = createNgElementConstructor(factory, {
-        strategyFactory: strategyFactory,
-        getAttributeToPropertyInputs: () => {
-          return new Map<string, string>([
-            ['attr-1', 'prop-1'],
-            ['attr-2', 'prop-2']
-          ]);
-        }
+    it('should send input values from attributes when connected', () => {
+      const element = new NgElementCtor();
+      element.setAttribute('foo-foo', 'value-foo-foo');
+      element.setAttribute('barbar', 'value-barbar');
+      element.connectedCallback();
+      expect(strategy.connectedElement).toBe(element);
+
+      expect(strategy.getInputValue('fooFoo')).toBe('value-foo-foo');
+      expect(strategy.getInputValue('barBar')).toBe('value-barbar');
+    });
+
+    it('should listen to output events after connected', fakeAsync(() => {
+      const element = new NgElementCtor();
+      element.connectedCallback();
+
+      let eventValue: any = null;
+      element.addEventListener('some-event', (e: CustomEvent) => eventValue = e.detail);
+      strategy.events.next({name: 'some-event', value: 'event-value'});
+
+      expect(eventValue).toEqual('event-value');
+    }));
+
+    it('should not listen to output events after disconnected', fakeAsync(() => {
+      const element = new NgElementCtor();
+      element.connectedCallback();
+      element.disconnectedCallback();
+      expect(strategy.disconnectCalled).toBe(true);
+
+      let eventValue: any = null;
+      element.addEventListener('some-event', (e: CustomEvent) => eventValue = e.detail);
+      strategy.events.next({name: 'some-event', value: 'event-value'});
+
+      expect(eventValue).toEqual(null);
+    }));
+
+    it('should properly set getters/setters on the element', () => {
+      const element = new NgElementCtor();
+      element.fooFoo = 'foo-foo-value';
+      element.barBar = 'barBar-value';
+
+      expect(strategy.inputs.get('fooFoo')).toBe('foo-foo-value');
+      expect(strategy.inputs.get('barBar')).toBe('barBar-value');
+    });
+
+    describe('with different attribute strategy', () => {
+      let NgElementCtorWithChangedAttr: NgElementConstructor<WithFooBar>;
+      let element: HTMLElement;
+
+      beforeAll(() => {
+        strategyFactory = new TestStrategyFactory();
+        strategy = strategyFactory.testStrategy;
+        NgElementCtorWithChangedAttr = createNgElementConstructor(factory, {
+          strategyFactory: strategyFactory,
+          getAttributeToPropertyInputs: () => {
+            return new Map<string, string>([
+              ['attr-1', 'prop1'],
+              ['attr-2', 'prop2']
+            ]);
+          }
+        });
+
+        customElements.define('test-element-with-changed-attributes', NgElementCtorWithChangedAttr);
       });
 
-      expect(NgElementCtorWithChangedAttr.observedAttributes).toEqual(['attr-1', 'attr-2']);
-    });
-  });
+      beforeEach(() => {
+        element = new NgElementCtorWithChangedAttr();
+      });
 
-  describe('connect', () => {
-    it('should let the strategy know that it has connected', () => {
-      const ngElement = new NgElementCtor();
+      it('should affect which attributes are watched', () => {
+        expect(NgElementCtorWithChangedAttr.observedAttributes).toEqual(['attr-1', 'attr-2']);
+      });
+
+      it('should send attribute values as inputs when connected', () => {
+        const element = new NgElementCtorWithChangedAttr();
+        element.setAttribute('attr-1', 'value-1');
+        element.setAttribute('attr-2', 'value-2');
+        element.setAttribute('attr-3', 'value-3'); // Made-up attribute
+        element.connectedCallback();
+
+        expect(strategy.getInputValue('prop1')).toBe('value-1');
+        expect(strategy.getInputValue('prop2')).toBe('value-2');
+        expect(strategy.getInputValue('prop3')).not.toBe('value-3');
+      });
     });
   });
-});
+}
 
 // Helpers
 @Component({
@@ -90,16 +163,11 @@ class TestComponent {
   @Input('barbar') barBar: string;
 
   @Output() bazBaz = new EventEmitter<boolean>();
-  @Output('quxqux') quxQux = new EventEmitter<object>();
-
-  constructor(@Inject('TEST_VALUE') public testValue: string) {}
+  @Output('quxqux') quxQux = new EventEmitter<Object>();
 }
 
 @NgModule({
   imports: [BrowserModule],
-  providers: [
-    {provide: 'TEST_VALUE', useValue: 'TEST'},
-  ],
   declarations: [TestComponent],
   entryComponents: [TestComponent],
 })

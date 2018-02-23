@@ -6,8 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Type} from '@angular/core';
-import {camelToKebabCase, createCustomEvent, getComponentName, isElement, isFunction, kebabToCamelCase, matchesSelector, scheduler, strictEquals, throwError} from '../src/utils';
+import {
+  camelToKebabCase,
+  createCustomEvent,
+  isElement,
+  isFunction,
+  kebabToCamelCase,
+  matchesSelector,
+  scheduler,
+  strictEquals,
+} from '../src/utils';
 
 describe('utils', () => {
   describe('scheduler', () => {
@@ -99,25 +107,6 @@ describe('utils', () => {
       expect(event.detail).toEqual(value);
     });
 
-  });
-
-  describe('getComponentName()', () => {
-    it('should return the component\'s name', () => {
-      class Foo {}
-      expect(getComponentName(Foo)).toBe('Foo');
-    });
-
-    it('should return the `overriddenName` (if present)', () => {
-      class Foo {
-        static overriddenName = 'Bar';
-      }
-      expect(getComponentName(Foo)).toBe('Bar');
-    });
-
-    it('should return the first line of the stringified component if no name', () => {
-      const Foo = {toString: () => 'Baz\nQux'};
-      expect(getComponentName(Foo as Type<any>)).toBe('Baz');
-    });
   });
 
   describe('isElement()', () => {
@@ -247,10 +236,5 @@ describe('utils', () => {
       expect(strictEquals(NaN, null)).toBe(false);
       expect(strictEquals(NaN, undefined)).toBe(false);
     });
-  });
-
-  describe('throwError()', () => {
-    it('should throw an error based on the specified message',
-       () => { expect(() => throwError('Test')).toThrowError('Test'); });
   });
 });

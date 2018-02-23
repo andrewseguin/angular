@@ -20,11 +20,14 @@ import {Subscription} from 'rxjs/Subscription';
 export interface NgElementConstructor<P> {
   readonly observedAttributes: string[];
 
-  attributeChangedCallback(): void;
+  new (): HTMLElement & CustomElement & WithProperties<P>;
+}
+
+export interface CustomElement {
+  attributeChangedCallback(
+      attrName: string, oldValue: string|null, newValue: string, namespace?: string): void;
   connectedCallback(): void;
   disconnectedCallback(): void;
-
-  new (): HTMLElement & WithProperties<P>;
 }
 
 /**
@@ -138,8 +141,8 @@ export function createNgElementConstructor<T, P>(
   // changes can be known.
   componentFactory.inputs.forEach(({propName}) => {
     Object.defineProperty(NgElement.prototype, propName, {
-      get: function() { return this.strategy.getInputValue(propName); },
-      set: function(newValue: any) { this.strategy.setInputValue(propName, newValue); },
+      get: function() { return this.ngElementStrategy.getInputValue(propName); },
+      set: function(newValue: any) { this.ngElementStrategy.setInputValue(propName, newValue); },
       configurable: true,
       enumerable: true,
     });
