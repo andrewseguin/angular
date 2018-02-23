@@ -12,7 +12,6 @@ import {
   ComponentRef,
   EventEmitter,
   Injector,
-  NgZone,
   OnChanges,
   SimpleChange,
   SimpleChanges
@@ -20,9 +19,10 @@ import {
 import {isFunction, scheduler, strictEquals} from './utils';
 import {extractProjectableNodes} from './extract-projectable-nodes';
 import {
-  NgElementDelegateBase, NgElementDelegateEvent,
-  NgElementDelegateFactoryBase
-} from './element-delegate';
+  NgElementStrategyBase,
+  NgElementStrategyEvent,
+  NgElementStrategyFactoryBase
+} from './element-strategy';
 import {Observable} from 'rxjs/Observable';
 import {merge} from 'rxjs/observable/merge';
 import {map} from 'rxjs/operator/map';
@@ -31,17 +31,17 @@ import {map} from 'rxjs/operator/map';
 const DESTROY_DELAY = 10;
 
 /**
- * Factory that creates new NgElementDelegate instances with the delegate factory's injector.
- * Each new delegate is created with the provided component factory which will create its
+ * Factory that creates new NgElementStrategy instances with the strategy factory's injector.
+ * A new strategy instance is created with the provided component factory which will create its
  * components on connect.
  *
  * @experimental
  */
-export class NgElementDelegateFactory<T> implements NgElementDelegateFactoryBase<T> {
+export class NgElementStrategyFactory implements NgElementStrategyFactoryBase {
   constructor(private injector: Injector) { }
 
-  create(componentFactory: ComponentFactory<T>) {
-    return new NgElementDelegate<T>(componentFactory, this.injector);
+  create<T>(componentFactory: ComponentFactory<T>) {
+    return new NgElementStrategy<T>(componentFactory, this.injector);
   }
 }
 
@@ -51,9 +51,9 @@ export class NgElementDelegateFactory<T> implements NgElementDelegateFactoryBase
  *
  * @experimental
  */
-export class NgElementDelegate<T> implements NgElementDelegateBase<T> {
+export class NgElementStrategy<T> implements NgElementStrategyBase<T> {
   /** Merged stream of the component's output events. */
-  events: Observable<NgElementDelegateEvent>;
+  events: Observable<NgElementStrategyEvent>;
 
   /** Reference to the component that was created on connect. */
   private componentRef: ComponentRef<T>;
@@ -153,6 +153,7 @@ export class NgElementDelegate<T> implements NgElementDelegateBase<T> {
 
     const inputChanges = this.inputChanges;
     this.inputChanges = null;
+
     (this.componentRef !.instance as any as OnChanges).ngOnChanges(inputChanges);
   }
 
@@ -177,6 +178,8 @@ export class NgElementDelegate<T> implements NgElementDelegateBase<T> {
       if (initialValue) {
         this.setInputValue(propName, initialValue);
       } else {
+        // Keep track of inputs that were not initialized in case we need to know this for
+        // calling ngOnChanges with SimpleChanges
         this.uninitializedInputs.add(propName);
       }
     });
@@ -205,7 +208,7 @@ export class NgElementDelegate<T> implements NgElementDelegateBase<T> {
     this.componentRef = this.componentFactory.create(childInjector, projectableNodes, element);
 
     this.implementsOnChanges =
-      isFunction((this.componentRef.instance as any as OnChanges).ngOnChanges);
+        isFunction((this.componentRef.instance as any as OnChanges).ngOnChanges);
 
     this.initializeInputs();
     this.initializeOutputs();

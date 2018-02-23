@@ -12,7 +12,7 @@
  * Entry point for all public APIs of the `elements` package.
  */
 export {NgElementConfig, NgElementConstructor, createNgElementConstructor} from './src/ng-element-constructor';
-export {NgElementDelegateFactory} from './src/ng-element-delegate';
+export {NgElementStrategyFactory} from './src/ng-element-strategy';
 export {VERSION} from './src/version';
 
 // This file only reexports content of the `src` folder. Keep it that way.

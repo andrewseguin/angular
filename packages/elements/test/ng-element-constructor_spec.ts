@@ -22,9 +22,9 @@ import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import {createNgElementConstructor, NgElementConstructor} from '../src/ng-element-constructor';
 import {patchEnv, restoreEnv} from '../testing/index';
 import {
-  NgElementDelegateBase, NgElementDelegateEvent,
-  NgElementDelegateFactoryBase
-} from '../src/element-delegate';
+  NgElementStrategyBase, NgElementStrategyEvent,
+  NgElementStrategyFactoryBase
+} from '../src/element-strategy';
 import {Subject} from 'rxjs/Subject';
 
 type WithFooBar = {
@@ -34,7 +34,8 @@ type WithFooBar = {
 
 fdescribe('createNgElementConstructor', () => {
   let NgElementCtor: NgElementConstructor<WithFooBar>;
-  let delegateFactory: TestDelegateFactory;
+  let factory: ComponentFactory<TestComponent>;
+  let strategyFactory: TestStrategyFactory;
 
   beforeAll(() => patchEnv());
   beforeAll(done => {
@@ -42,16 +43,9 @@ fdescribe('createNgElementConstructor', () => {
     platformBrowserDynamic()
         .bootstrapModule(TestModule)
         .then(ref => {
-          const factory = ref.componentFactoryResolver.resolveComponentFactory(TestComponent);
-          delegateFactory = new TestDelegateFactory();
-          NgElementCtor = createNgElementConstructor(factory, {delegateFactory});
-
-          // The `@webcomponents/custom-elements/src/native-shim.js` polyfill, that we use to
-          // enable ES2015 classes transpiled to ES5 constructor functions to be used as Custom
-          // Elements in tests, only works if the elements have been registered with
-          // `customElements.define()`.
-          customElements.define(factory.selector, NgElementCtor);
-          return customElements.whenDefined(factory.selector);
+          factory = ref.componentFactoryResolver.resolveComponentFactory(TestComponent);
+          strategyFactory = new TestStrategyFactory();
+          NgElementCtor = createNgElementConstructor(factory, {strategyFactory: strategyFactory});
         })
         .then(done, done.fail);
   });
@@ -59,8 +53,30 @@ fdescribe('createNgElementConstructor', () => {
   afterAll(() => destroyPlatform());
   afterAll(() => restoreEnv());
 
-  it ('should work', () => {
-    expect(true).toBe(false);
+  describe('observedAttributes', () => {
+    it('should use a default strategy for converting component inputs', () => {
+      expect(NgElementCtor.observedAttributes).toEqual(['foo-foo', 'barbar']);
+    });
+
+    it('should be able to override which attributes are watched', () => {
+      const NgElementCtorWithChangedAttr = createNgElementConstructor(factory, {
+        strategyFactory: strategyFactory,
+        getAttributeToPropertyInputs: () => {
+          return new Map<string, string>([
+            ['attr-1', 'prop-1'],
+            ['attr-2', 'prop-2']
+          ]);
+        }
+      });
+
+      expect(NgElementCtorWithChangedAttr.observedAttributes).toEqual(['attr-1', 'attr-2']);
+    });
+  });
+
+  describe('connect', () => {
+    it('should let the strategy know that it has connected', () => {
+      const ngElement = new NgElementCtor();
+    });
   });
 });
 
@@ -91,12 +107,12 @@ class TestModule {
   ngDoBootstrap() {}
 }
 
-export class TestDelegate implements NgElementDelegateBase<any> {
+export class TestStrategy implements NgElementStrategyBase<any> {
   connectedElement: HTMLElement | null = null;
   disconnectCalled = false;
   inputs = new Map<string, any>();
 
-  events = new Subject<NgElementDelegateEvent>();
+  events = new Subject<NgElementStrategyEvent>();
 
   connect(element: HTMLElement): void {
     this.connectedElement = element;
@@ -115,10 +131,10 @@ export class TestDelegate implements NgElementDelegateBase<any> {
   }
 }
 
-export class TestDelegateFactory implements NgElementDelegateFactoryBase<any> {
-  testDelegate = new TestDelegate();
+export class TestStrategyFactory implements NgElementStrategyFactoryBase {
+  testStrategy = new TestStrategy();
 
-  create(componentFactory: ComponentFactory<any>): NgElementDelegateBase<any> {
-    return this.testDelegate;
+  create(componentFactory: ComponentFactory<any>): NgElementStrategyBase<any> {
+    return this.testStrategy;
   }
 }

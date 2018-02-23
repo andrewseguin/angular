@@ -8,13 +8,13 @@
 import {Observable} from 'rxjs/Observable';
 import {ComponentFactory} from '@angular/core';
 
-export interface NgElementDelegateEvent {
+export interface NgElementStrategyEvent {
   name: string;
   value: any;
 }
 
-export interface NgElementDelegateBase<T> {
-  events: Observable<NgElementDelegateEvent>;
+export interface NgElementStrategyBase<T> {
+  events: Observable<NgElementStrategyEvent>;
 
   connect(element: HTMLElement): void;
   disconnect(): void;
@@ -22,6 +22,6 @@ export interface NgElementDelegateBase<T> {
   setInputValue(propName: string, value: string): void;
 }
 
-export interface NgElementDelegateFactoryBase {
-  create<T>(componentFactory: ComponentFactory<T>): NgElementDelegateBase<T>;
+export interface NgElementStrategyFactoryBase {
+  create<T>(componentFactory: ComponentFactory<T>): NgElementStrategyBase<T>;
 }

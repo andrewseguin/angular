@@ -9,7 +9,8 @@
 import {ComponentFactory} from '@angular/core';
 
 import {camelToKebabCase, createCustomEvent} from './utils';
-import {NgElementDelegateFactoryBase, NgElementDelegateBase} from './element-delegate';
+import {NgElementStrategyFactoryBase, NgElementStrategyBase} from './element-strategy';
+import {Subscription} from 'rxjs/Subscription';
 
 /**
  * Class constructor based on an Angular Component to be used for custom element registration.
@@ -18,6 +19,11 @@ import {NgElementDelegateFactoryBase, NgElementDelegateBase} from './element-del
  */
 export interface NgElementConstructor<P> {
   readonly observedAttributes: string[];
+
+  attributeChangedCallback(): void;
+  connectedCallback(): void;
+  disconnectedCallback(): void;
+
   new (): HTMLElement & WithProperties<P>;
 }
 
@@ -30,20 +36,20 @@ export type WithProperties<P> = {
 };
 
 /**
- * Initialization configuration for the NgElementConstructor. Provides the delegate factory
- * that produces a delegate for each instantiated element. Additionally, provides a function
+ * Initialization configuration for the NgElementConstructor. Provides the strategy factory
+ * that produces a strategy for each instantiated element. Additionally, provides a function
  * that takes the component factory and provides a map of which attributes should be observed on
  * the element and which property they are associated with.
  *
  * @experimental
  */
 export interface NgElementConfig<T> {
-  delegateFactory: NgElementDelegateFactoryBase<T>;
+  strategyFactory: NgElementStrategyFactoryBase;
   getAttributeToPropertyInputs?: (factory: ComponentFactory<any>) => Map<string, string>;
 }
 
 /**
- * Gets a map of element attributes that should be observed and provided to the delegate as
+ * Gets a map of element attributes that should be observed and provided to the strategy as
  * property inputs according to the component factory.
  */
 export const defaultGetAttributeToPropertyInputs = (factory: ComponentFactory<any>) => {
@@ -82,43 +88,49 @@ export function createNgElementConstructor<T, P>(
   class NgElement extends HTMLElement {
     static readonly observedAttributes = Array.from(attributeToPropertyInputs.keys());
 
-    private delegate: NgElementDelegateBase<T>;
+    private ngElementStrategy: NgElementStrategyBase<T>;
+    private ngElementEventsSubscription: Subscription | null = null;
 
-    constructor(delegateFactoryOverride: NgElementDelegateFactoryBase<T>) {
+    constructor(strategyFactoryOverride?: NgElementStrategyFactoryBase) {
       super();
 
-      // Use the constructor's delegate factory override if it is present, otherwise default to
+      // Use the constructor's strategy factory override if it is present, otherwise default to
       // the config's factory.
-      const delegateFactory = delegateFactoryOverride || config.delegateFactory;
-      this.delegate = delegateFactory.create(componentFactory);
+      const strategyFactory = strategyFactoryOverride || config.strategyFactory;
+      this.ngElementStrategy = strategyFactory.create(componentFactory);
     }
 
     attributeChangedCallback(
         attrName: string, oldValue: string|null, newValue: string, namespace?: string): void {
       const propName = attributeToPropertyInputs.get(attrName)!;
-      this.delegate.setInputValue(propName, newValue);
+      this.ngElementStrategy.setInputValue(propName, newValue);
     }
 
     connectedCallback(): void {
-      // Take element attribute inputs and set them as inputs on the delegate
+      // Take element attribute inputs and set them as inputs on the strategy
       attributeToPropertyInputs.forEach((propName, attrName) => {
         const value = this.getAttribute(attrName);
         if (value) {
-          this.delegate.setInputValue(propName, value);
+          this.ngElementStrategy.setInputValue(propName, value);
         }
       });
 
-      this.delegate.connect(this);
+      this.ngElementStrategy.connect(this);
 
-      // Listen for events from the delegate and dispatch them as custom events
-      this.delegate.events.subscribe(e => {
+      // Listen for events from the strategy and dispatch them as custom events
+      this.ngElementEventsSubscription = this.ngElementStrategy.events.subscribe(e => {
         const customEvent = createCustomEvent(this.ownerDocument, e.name, e.value);
         this.dispatchEvent(customEvent);
       });
     }
 
     disconnectedCallback(): void {
-      this.delegate.disconnect();
+      this.ngElementStrategy.disconnect();
+
+      if (this.ngElementEventsSubscription) {
+        this.ngElementEventsSubscription.unsubscribe();
+        this.ngElementEventsSubscription = null;
+      }
     }
   }
 
@@ -126,8 +138,8 @@ export function createNgElementConstructor<T, P>(
   // changes can be known.
   componentFactory.inputs.forEach(({propName}) => {
     Object.defineProperty(NgElement.prototype, propName, {
-      get: function() { return this.delegate.getInputValue(propName); },
-      set: function(newValue: any) { this.delegate.setInputValue(propName, newValue); },
+      get: function() { return this.strategy.getInputValue(propName); },
+      set: function(newValue: any) { this.strategy.setInputValue(propName, newValue); },
       configurable: true,
       enumerable: true,
     });
