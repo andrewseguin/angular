@@ -20,14 +20,14 @@ import {Subscription} from 'rxjs/Subscription';
 export interface NgElementConstructor<P> {
   readonly observedAttributes: string[];
 
-  new (): HTMLElement & CustomElement & WithProperties<P>;
+  new (): NgElement & WithProperties<P>;
 }
 
-export interface CustomElement {
-  attributeChangedCallback(
+export abstract class NgElement extends HTMLElement {
+  abstract attributeChangedCallback(
       attrName: string, oldValue: string|null, newValue: string, namespace?: string): void;
-  connectedCallback(): void;
-  disconnectedCallback(): void;
+  abstract connectedCallback(): void;
+  abstract disconnectedCallback(): void;
 }
 
 /**
@@ -88,7 +88,7 @@ export function createNgElementConstructor<T, P>(
       config.getAttributeToPropertyInputs || defaultGetAttributeToPropertyInputs;
   const attributeToPropertyInputs = getAttributeToPropertyInputs(componentFactory);
 
-  class NgElement extends HTMLElement {
+  class NgElementImpl extends NgElement {
     static readonly observedAttributes = Array.from(attributeToPropertyInputs.keys());
 
     private ngElementStrategy: NgElementStrategyBase<T>;
@@ -140,7 +140,7 @@ export function createNgElementConstructor<T, P>(
   // Add getters and setters for each input defined on the Angular Component so that the input
   // changes can be known.
   componentFactory.inputs.forEach(({propName}) => {
-    Object.defineProperty(NgElement.prototype, propName, {
+    Object.defineProperty(NgElementImpl.prototype, propName, {
       get: function() { return this.ngElementStrategy.getInputValue(propName); },
       set: function(newValue: any) { this.ngElementStrategy.setInputValue(propName, newValue); },
       configurable: true,
@@ -148,5 +148,5 @@ export function createNgElementConstructor<T, P>(
     });
   });
 
-  return (NgElement as any) as NgElementConstructor<P>;
+  return (NgElementImpl as any) as NgElementConstructor<P>;
 }
