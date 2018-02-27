@@ -24,13 +24,13 @@ export interface NgElementStrategyEvent {
  *
  * @experimental
  */
-export interface NgElementStrategy<T> {
+export interface NgElementStrategy {
   events: Observable<NgElementStrategyEvent>;
 
   connect(element: HTMLElement): void;
   disconnect(): void;
-  getInputValue(propName: string): any;
-  setInputValue(propName: string, value: string): void;
+  getPropertyValue(propName: string): any;
+  setPropertyValue(propName: string, value: string): void;
 }
 
 /**
@@ -38,6 +38,4 @@ export interface NgElementStrategy<T> {
  *
  * @experimental
  */
-export interface NgElementStrategyFactory {
-  create<T>(componentFactory: ComponentFactory<T>): NgElementStrategy<T>;
-}
+export interface NgElementStrategyFactory { create(): NgElementStrategy; }

@@ -11,9 +11,9 @@
  * @description
  * Entry point for all public APIs of the `elements` package.
  */
+export {ComponentFactoryNgElementStrategy, ComponentFactoryNgElementStrategyFactory, getConfigFromComponentFactory} from './src/component-factory-strategy';
 export {NgElementStrategy, NgElementStrategyEvent, NgElementStrategyFactory} from './src/element-strategy';
 export {NgElement, NgElementConfig, NgElementConstructor, createNgElementConstructor} from './src/ng-element-constructor';
-export {InjectorNgElementStrategy, InjectorNgElementStrategyFactory} from './src/ng-element-strategy';
 export {VERSION} from './src/version';
 
 // This file only reexports content of the `src` folder. Keep it that way.

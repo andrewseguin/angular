@@ -5,15 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+
 import {ComponentFactory, ComponentRef, Injector, NgModuleRef, Type} from '@angular/core';
 import {Subject} from 'rxjs/Subject';
 
-import {InjectorNgElementStrategy} from '../src/ng-element-strategy';
+import {ComponentFactoryNgElementStrategy} from '../src/component-factory-strategy';
 
-describe('InjectorNgElementStrategy', () => {
+describe('ComponentFactoryNgElementStrategy', () => {
   let factory: FakeComponentFactory;
   let component: FakeComponent;
-  let strategy: InjectorNgElementStrategy<FakeComponent>;
+  let strategy: ComponentFactoryNgElementStrategy;
   let injector;
 
   beforeEach(() => {
@@ -24,7 +25,7 @@ describe('InjectorNgElementStrategy', () => {
     const applicationRef = jasmine.createSpyObj('applicationRef', ['attachView']);
     injector.get.and.returnValue(applicationRef);
 
-    strategy = new InjectorNgElementStrategy(factory, injector);
+    strategy = new ComponentFactoryNgElementStrategy(factory, injector);
   });
 
   describe('connect', () => {
@@ -54,7 +55,7 @@ export class FakeComponentFactory extends ComponentFactory<any> {
 
   get selector(): string { return 'fake-component'; }
   get componentType(): Type<any> { return FakeComponent; }
-  get ngContentSelectors(): string[] { return []; }
+  get ngContentSelectors(): string[] { return ['content-1', 'content-2']; }
   get inputs(): {propName: string; templateName: string}[] {
     return [
       {propName: 'input1', templateName: 'templateInput1'},

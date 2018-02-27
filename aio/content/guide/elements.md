@@ -15,7 +15,7 @@ detection APIs.
 ```ts
 //hello-world.ts
 import { Component, Input, NgModule } from '@angular/core';
-import { InjectorNgElementStrategyFactory, createNgElementConstructor } from '@angular/elements';
+import { createNgElementConstructor, getConfigFromComponentFactory } from '@angular/elements';
 
 @Component({
   selector: 'hello-world',
@@ -46,9 +46,8 @@ import { HelloWorld } from './hello-world.ngfactory';
 })
 export class AppComponent {
   constructor(ngModuleRef: NgModuleRef) {
-    const NgElementConstructor = createNgElementConstructor(HelloWorld, {
-      strategyFactory: new InjectorNgElementStrategyFactory(injector)
-    });
+    const ngElementConfig = getConfigFromComponentFactory(HelloWorld, injector);
+    const NgElementConstructor = createNgElementConstructor(ngElementConfig);
     customElements.register('hello-world', NgElementConstructor);
   }
 }

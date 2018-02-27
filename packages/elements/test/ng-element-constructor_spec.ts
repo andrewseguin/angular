@@ -12,7 +12,7 @@ import {platformBrowserDynamic} from '@angular/platform-browser-dynamic';
 import {Subject} from 'rxjs/Subject';
 
 import {NgElementStrategy, NgElementStrategyEvent, NgElementStrategyFactory} from '../src/element-strategy';
-import {NgElementConstructor, createNgElementConstructor} from '../src/ng-element-constructor';
+import {NgElementConfig, NgElementConstructor, createNgElementConstructor} from '../src/ng-element-constructor';
 import {patchEnv, restoreEnv} from '../testing/index';
 
 type WithFooBar = {
@@ -36,7 +36,14 @@ if (typeof customElements !== 'undefined') {
             factory = ref.componentFactoryResolver.resolveComponentFactory(TestComponent);
             strategyFactory = new TestStrategyFactory();
             strategy = strategyFactory.testStrategy;
-            NgElementCtor = createNgElementConstructor(factory, {strategyFactory: strategyFactory});
+
+            const config: NgElementConfig = {
+              strategyFactory,
+              propertyInputs: ['fooFoo', 'barBar'],
+              attributeToPropertyInputs:
+                  new Map<string, string>([['foo-foo', 'fooFoo'], ['barbar', 'barBar']])
+            };
+            NgElementCtor = createNgElementConstructor(config);
 
             // The `@webcomponents/custom-elements/src/native-shim.js` polyfill allows us to create
             // new instances of the NgElement which extends HTMLElement, as long as we define it.
@@ -59,8 +66,8 @@ if (typeof customElements !== 'undefined') {
       element.connectedCallback();
       expect(strategy.connectedElement).toBe(element);
 
-      expect(strategy.getInputValue('fooFoo')).toBe('value-foo-foo');
-      expect(strategy.getInputValue('barBar')).toBe('value-barbar');
+      expect(strategy.getPropertyValue('fooFoo')).toBe('value-foo-foo');
+      expect(strategy.getPropertyValue('barBar')).toBe('value-barbar');
     });
 
     it('should listen to output events after connected', () => {
@@ -103,11 +110,11 @@ if (typeof customElements !== 'undefined') {
       beforeAll(() => {
         strategyFactory = new TestStrategyFactory();
         strategy = strategyFactory.testStrategy;
-        NgElementCtorWithChangedAttr = createNgElementConstructor(factory, {
+        NgElementCtorWithChangedAttr = createNgElementConstructor({
           strategyFactory: strategyFactory,
-          getAttributeToPropertyInputs: () => {
-            return new Map<string, string>([['attr-1', 'prop1'], ['attr-2', 'prop2']]);
-          }
+          propertyInputs: ['prop1', 'prop2'],
+          attributeToPropertyInputs:
+              new Map<string, string>([['attr-1', 'prop1'], ['attr-2', 'prop2']])
         });
 
         customElements.define('test-element-with-changed-attributes', NgElementCtorWithChangedAttr);
@@ -126,9 +133,9 @@ if (typeof customElements !== 'undefined') {
         element.setAttribute('attr-3', 'value-3');  // Made-up attribute
         element.connectedCallback();
 
-        expect(strategy.getInputValue('prop1')).toBe('value-1');
-        expect(strategy.getInputValue('prop2')).toBe('value-2');
-        expect(strategy.getInputValue('prop3')).not.toBe('value-3');
+        expect(strategy.getPropertyValue('prop1')).toBe('value-1');
+        expect(strategy.getPropertyValue('prop2')).toBe('value-2');
+        expect(strategy.getPropertyValue('prop3')).not.toBe('value-3');
       });
     });
   });
@@ -156,7 +163,7 @@ class TestModule {
   ngDoBootstrap() {}
 }
 
-export class TestStrategy implements NgElementStrategy<any> {
+export class TestStrategy implements NgElementStrategy {
   connectedElement: HTMLElement|null = null;
   disconnectCalled = false;
   inputs = new Map<string, any>();
@@ -167,15 +174,13 @@ export class TestStrategy implements NgElementStrategy<any> {
 
   disconnect(): void { this.disconnectCalled = true; }
 
-  getInputValue(propName: string): any { return this.inputs.get(propName); }
+  getPropertyValue(propName: string): any { return this.inputs.get(propName); }
 
-  setInputValue(propName: string, value: string): void { this.inputs.set(propName, value); }
+  setPropertyValue(propName: string, value: string): void { this.inputs.set(propName, value); }
 }
 
 export class TestStrategyFactory implements NgElementStrategyFactory {
   testStrategy = new TestStrategy();
 
-  create(componentFactory: ComponentFactory<any>): NgElementStrategy<any> {
-    return this.testStrategy;
-  }
+  create(): NgElementStrategy { return this.testStrategy; }
 }

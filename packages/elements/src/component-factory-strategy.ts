@@ -13,38 +13,57 @@ import {map} from 'rxjs/operator/map';
 
 import {NgElementStrategy, NgElementStrategyEvent, NgElementStrategyFactory} from './element-strategy';
 import {extractProjectableNodes} from './extract-projectable-nodes';
-import {isFunction, scheduler, strictEquals} from './utils';
+import {camelToKebabCase, isFunction, scheduler, strictEquals} from './utils';
 
 /** Time in milliseconds to wait before destroying the component ref when disconnected. */
 const DESTROY_DELAY = 10;
 
 /**
- * Factory that creates new InjectorNgElementStrategy instances with the strategy factory's
+ * Creates an NgElementConfig based on the provided component factory and injector. By default,
+ * the observed attributes on the NgElement will be the kebab-case version of the component inputs.
+ *
+ * @experimental
+ */
+export function getConfigFromComponentFactory(
+    componentFactory: ComponentFactory<any>, injector: Injector) {
+  const attributeToPropertyInputs = new Map<string, string>();
+  componentFactory.inputs.forEach(({propName, templateName}) => {
+    const attr = camelToKebabCase(templateName);
+    attributeToPropertyInputs.set(attr, propName);
+  });
+
+  return {
+    strategyFactory: new ComponentFactoryNgElementStrategyFactory(componentFactory, injector),
+    propertyInputs: componentFactory.inputs.map(({propName}) => propName),
+    attributeToPropertyInputs,
+  };
+}
+
+/**
+ * Factory that creates new ComponentFactoryNgElementStrategy instances with the strategy factory's
  * injector. A new strategy instance is created with the provided component factory which will
  * create its components on connect.
  *
  * @experimental
  */
-export class InjectorNgElementStrategyFactory implements NgElementStrategyFactory {
-  constructor(private injector: Injector) {}
+export class ComponentFactoryNgElementStrategyFactory implements NgElementStrategyFactory {
+  constructor(private componentFactory: ComponentFactory<any>, private injector: Injector) {}
 
-  create<T>(componentFactory: ComponentFactory<T>) {
-    return new InjectorNgElementStrategy<T>(componentFactory, this.injector);
-  }
+  create() { return new ComponentFactoryNgElementStrategy(this.componentFactory, this.injector); }
 }
 
 /**
- * Creates and destroys a component ref and handles its change detection in response to input
- * changes.
+ * Creates and destroys a component ref using a component factory and handles change detection
+ * in response to input changes.
  *
  * @experimental
  */
-export class InjectorNgElementStrategy<T> implements NgElementStrategy<T> {
+export class ComponentFactoryNgElementStrategy implements NgElementStrategy {
   /** Merged stream of the component's output events. */
   events: Observable<NgElementStrategyEvent>;
 
   /** Reference to the component that was created on connect. */
-  private componentRef: ComponentRef<T>;
+  private componentRef: ComponentRef<any>;
 
   /** Changes that have been made to the component ref since the last time onChanges was called. */
   private inputChanges: SimpleChanges|null = null;
@@ -64,7 +83,7 @@ export class InjectorNgElementStrategy<T> implements NgElementStrategy<T> {
   /** Set of inputs that were not initially set when the component was created. */
   private readonly uninitializedInputs = new Set<string>();
 
-  constructor(private componentFactory: ComponentFactory<T>, private injector: Injector) {}
+  constructor(private componentFactory: ComponentFactory<any>, private injector: Injector) {}
 
   /**
    * Initializes a new component if one has not yet been created and cancels any scheduled
@@ -103,7 +122,7 @@ export class InjectorNgElementStrategy<T> implements NgElementStrategy<T> {
    * Returns the component property value. If the component has not yet been created, the value is
    * retrieved from the cached initialization values.
    */
-  getInputValue(property: string): any {
+  getPropertyValue(property: string): any {
     if (!this.componentRef) {
       return this.initialInputValues.get(property);
     }
@@ -115,8 +134,8 @@ export class InjectorNgElementStrategy<T> implements NgElementStrategy<T> {
    * Sets the input value for the property. If the component has not yet been created, the value is
    * cached and set when the component is created.
    */
-  setInputValue(property: string, value: any): void {
-    if (strictEquals(value, this.getInputValue(property))) {
+  setPropertyValue(property: string, value: any): void {
+    if (strictEquals(value, this.getPropertyValue(property))) {
       return;
     }
 
@@ -157,7 +176,7 @@ export class InjectorNgElementStrategy<T> implements NgElementStrategy<T> {
     this.componentFactory.inputs.forEach(({propName}) => {
       const initialValue = this.initialInputValues.get(propName);
       if (initialValue) {
-        this.setInputValue(propName, initialValue);
+        this.setPropertyValue(propName, initialValue);
       } else {
         // Keep track of inputs that were not initialized in case we need to know this for
         // calling ngOnChanges with SimpleChanges
@@ -227,7 +246,7 @@ export class InjectorNgElementStrategy<T> implements NgElementStrategy<T> {
     const isFirstChange = this.uninitializedInputs.has(property);
     this.uninitializedInputs.delete(property);
 
-    const previousValue = isFirstChange ? undefined : this.getInputValue(property);
+    const previousValue = isFirstChange ? undefined : this.getPropertyValue(property);
     this.inputChanges[property] = new SimpleChange(previousValue, currentValue, isFirstChange);
   }
 
