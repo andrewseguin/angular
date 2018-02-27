@@ -4,7 +4,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { SharedModule } from '../../shared/shared.module';
 import { ApiListComponent } from './api-list.component';
 import { ApiService } from './api.service';
-import { WithCustomElement } from '../element-registry';
+import { WithCustomElementComponent } from '../element-registry';
 
 @NgModule({
   imports: [ CommonModule, SharedModule, HttpClientModule ],
@@ -12,6 +12,6 @@ import { WithCustomElement } from '../element-registry';
   entryComponents: [ ApiListComponent ],
   providers: [ ApiService ]
 })
-export class ApiListModule implements WithCustomElement {
-  customElement: Type<any> = ApiListComponent;
+export class ApiListModule implements WithCustomElementComponent {
+  customElementComponent: Type<any> = ApiListComponent;
 }

@@ -2,7 +2,7 @@ import { NgModule, Type } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ResourceListComponent } from './resource-list.component';
 import { ResourceService } from './resource.service';
-import { WithCustomElement } from '../element-registry';
+import { WithCustomElementComponent } from '../element-registry';
 
 @NgModule({
   imports: [ CommonModule ],
@@ -10,6 +10,6 @@ import { WithCustomElement } from '../element-registry';
   entryComponents: [ ResourceListComponent ],
   providers: [ ResourceService ]
 })
-export class ResourceListModule implements WithCustomElement {
-  customElement: Type<any> = ResourceListComponent;
+export class ResourceListModule implements WithCustomElementComponent {
+  customElementComponent: Type<any> = ResourceListComponent;
 }

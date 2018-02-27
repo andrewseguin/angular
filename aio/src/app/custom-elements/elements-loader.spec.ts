@@ -7,7 +7,7 @@ import {
 import {TestBed, fakeAsync, tick} from '@angular/core/testing';
 
 import { ElementsLoader } from './elements-loader';
-import { ELEMENT_MODULE_PATHS_TOKEN, WithCustomElement } from './element-registry';
+import { ELEMENT_MODULE_PATHS_TOKEN, WithCustomElementComponent } from './element-registry';
 
 const actualCustomElements = window.customElements;
 
@@ -63,7 +63,7 @@ describe('ElementsLoader', () => {
 
   it('should be able to register an element', fakeAsync(() => {
     // Verify that the elements loader considered `element-a-selector` to be unregistered.
-    expect(elementsLoader.unregisteredElements.has('element-a-selector')).toBeTruthy();
+    expect(elementsLoader.elementsToLoad.has('element-a-selector')).toBeTruthy();
 
     const hostEl = document.createElement('div');
     hostEl.innerHTML = `<element-a-selector></element-a-selector>`;
@@ -77,7 +77,7 @@ describe('ElementsLoader', () => {
     // Verify the right component was loaded/created
     expect(defineArgs[1].observedAttributes[0]).toBe('element-a-input');
 
-    expect(elementsLoader.unregisteredElements.has('element-a-selector')).toBeFalsy();
+    expect(elementsLoader.elementsToLoad.has('element-a-selector')).toBeFalsy();
   }));
 
   it('should only register an element one time', fakeAsync(() => {
@@ -98,8 +98,8 @@ describe('ElementsLoader', () => {
 
 // TEST CLASSES/HELPERS
 
-class FakeCustomElementModule implements WithCustomElement {
-  customElement: Type<any>;
+class FakeCustomElementModule implements WithCustomElementComponent {
+  customElementComponent: Type<any>;
 }
 
 class FakeComponentFactoryResolver extends ComponentFactoryResolver {
@@ -110,10 +110,10 @@ class FakeComponentFactoryResolver extends ComponentFactoryResolver {
   }
 }
 
-class FakeModuleRef extends NgModuleRef<WithCustomElement> {
+class FakeModuleRef extends NgModuleRef<WithCustomElementComponent> {
   injector: Injector;
   componentFactoryResolver = new FakeComponentFactoryResolver(this.modulePath);
-  instance: WithCustomElement = new FakeCustomElementModule();
+  instance: WithCustomElementComponent = new FakeCustomElementModule();
 
   constructor(private modulePath) { super(); }
 

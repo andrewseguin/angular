@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { CodeTabsComponent } from './code-tabs.component';
 import { MatTabsModule } from '@angular/material';
 import { CodeModule } from './code.module';
-import { WithCustomElement } from '../element-registry';
+import { WithCustomElementComponent } from '../element-registry';
 
 @NgModule({
   imports: [ CommonModule, MatTabsModule, CodeModule ],
@@ -11,6 +11,6 @@ import { WithCustomElement } from '../element-registry';
   exports: [ CodeTabsComponent ],
   entryComponents: [ CodeTabsComponent ]
 })
-export class CodeTabsModule implements WithCustomElement {
-  customElement: Type<any> = CodeTabsComponent;
+export class CodeTabsModule implements WithCustomElementComponent {
+  customElementComponent: Type<any> = CodeTabsComponent;
 }

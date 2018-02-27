@@ -62,7 +62,7 @@ export class CodeTabsComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit() {
     this.codeComponents.toArray().forEach((codeComponent, i) => {
-      codeComponent.updateCode(this.tabs[i].code);
+      codeComponent.code = this.tabs[i].code;
     });
   }
 

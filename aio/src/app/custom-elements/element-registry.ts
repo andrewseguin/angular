@@ -46,9 +46,12 @@ export const ELEMENT_MODULE_PATHS_AS_ROUTES = [
   }
 ];
 
-/** Interface expected to be implemented by all modules that declare custom elements. */
-export interface WithCustomElement {
-  customElement: Type<string>;
+/**
+ * Interface expected to be implemented by all modules that declare a component that can be used as
+ * a custom element.
+ */
+export interface WithCustomElementComponent {
+  customElementComponent: Type<string>;
 }
 
 /** Injection token to provide the element path modules. */

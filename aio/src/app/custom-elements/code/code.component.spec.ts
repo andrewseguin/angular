@@ -38,7 +38,7 @@ describe('CodeComponent', () => {
     delete (window as any)['prettyPrintOne'];
   });
 
-  beforeEach(async(() => {
+  beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [ NoopAnimationsModule, CodeModule ],
       declarations: [ HostComponent ],
@@ -48,7 +48,7 @@ describe('CodeComponent', () => {
         {provide: Logger, useClass: TestLogger }
      ]
     }).compileComponents();
-  }));
+  });
 
   // Must be async because
   // CodeComponent creates PrettyPrintService which async loads `prettify.js`.
@@ -79,33 +79,25 @@ describe('CodeComponent', () => {
     it('should add line numbers to one-line code sample when linenums set true', () => {
       hostComponent.linenums = 'true';
       fixture.detectChanges();
-      hostComponent.refresh();
 
       expect(hasLineNumbers()).toBe(true);
     });
 
     it('should format a small multi-line code without linenums by default', () => {
-      hostComponent.code = smallMultiLineCode;
-      fixture.detectChanges();
-      hostComponent.refresh();
-
+      hostComponent.setCode(smallMultiLineCode);
       expect(hasLineNumbers()).toBe(false);
     });
 
     it('should add line numbers to a big multi-line code by default', () => {
-      hostComponent.code = bigMultiLineCode;
-      fixture.detectChanges();
-      hostComponent.refresh();
-
+      hostComponent.setCode(bigMultiLineCode);
       expect(hasLineNumbers()).toBe(true);
     });
 
     it('should format big multi-line code without linenums when linenums set false', () => {
       hostComponent.linenums = false;
-      hostComponent.code = bigMultiLineCode;
       fixture.detectChanges();
-      hostComponent.refresh();
 
+      hostComponent.setCode(bigMultiLineCode);
       expect(hasLineNumbers()).toBe(false);
     });
   });
@@ -113,28 +105,24 @@ describe('CodeComponent', () => {
   describe('whitespace handling', () => {
     it('should remove common indentation from the code before rendering', () => {
       hostComponent.linenums = false;
-      hostComponent.code = '  abc\n   let x = text.split(\'\\n\');\n  ghi\n\n  jkl\n';
       fixture.detectChanges();
-      hostComponent.refresh();
 
+      hostComponent.setCode('  abc\n   let x = text.split(\'\\n\');\n  ghi\n\n  jkl\n');
       const codeContent = fixture.nativeElement.querySelector('code').textContent;
       expect(codeContent).toEqual('abc\n let x = text.split(\'\\n\');\nghi\n\njkl');
     });
 
     it('should trim whitespace from the code before rendering', () => {
       hostComponent.linenums = false;
-      hostComponent.code = '\n\n\n' + smallMultiLineCode + '\n\n\n';
       fixture.detectChanges();
-      hostComponent.refresh();
 
+      hostComponent.setCode('\n\n\n' + smallMultiLineCode + '\n\n\n');
       const codeContent = fixture.nativeElement.querySelector('code').textContent;
       expect(codeContent).toEqual(codeContent.trim());
     });
 
     it('should trim whitespace from code before computing whether to format linenums', () => {
-      hostComponent.code = '\n\n\n' + hostComponent.code + '\n\n\n';
-      fixture.detectChanges();
-      hostComponent.refresh();
+      hostComponent.setCode('\n\n\n' + oneLineCode + '\n\n\n');
 
       // `<li>`s are a tell-tale for line numbers
       const lis = fixture.nativeElement.querySelectorAll('li');
@@ -154,37 +142,29 @@ describe('CodeComponent', () => {
     });
 
     it('should display error message when there is no code (after trimming)', () => {
-      hostComponent.code = ' \n ';
-      fixture.detectChanges();
-      hostComponent.refresh();
-
+      hostComponent.setCode(' \n ');
       expect(getErrorMessage()).toContain('missing');
     });
 
     it('should show path and region in missing-code error message', () => {
-      hostComponent.code = ' \n ';
       hostComponent.path = 'fizz/buzz/foo.html';
       hostComponent.region = 'something';
       fixture.detectChanges();
-      hostComponent.refresh();
 
+      hostComponent.setCode(' \n ');
       expect(getErrorMessage()).toMatch(/for[\s\S]fizz\/buzz\/foo\.html#something$/);
     });
 
     it('should show path only in missing-code error message when no region', () => {
-      hostComponent.code = ' \n ';
       hostComponent.path = 'fizz/buzz/foo.html';
       fixture.detectChanges();
-      hostComponent.refresh();
 
+      hostComponent.setCode(' \n ');
       expect(getErrorMessage()).toMatch(/for[\s\S]fizz\/buzz\/foo\.html$/);
     });
 
     it('should show simple missing-code error message when no path/region', () => {
-      hostComponent.code = ' \n ';
-      fixture.detectChanges();
-      hostComponent.refresh();
-
+      hostComponent.setCode(' \n ');
       expect(getErrorMessage()).toMatch(/missing.$/);
     });
   });
@@ -237,8 +217,7 @@ describe('CodeComponent', () => {
       const expectedCode = smallMultiLineCode.trim().replace(/&lt;/g, '<').replace(/&gt;/g, '>');
       let actualCode;
 
-      hostComponent.code = smallMultiLineCode;
-      hostComponent.refresh();
+      hostComponent.setCode(smallMultiLineCode);
 
       [false, true, 42].forEach(linenums => {
         hostComponent.linenums = linenums;
@@ -284,7 +263,6 @@ describe('CodeComponent', () => {
   `
 })
 class HostComponent implements AfterViewInit {
-  code = oneLineCode;
   hideCopy: boolean;
   language: string;
   linenums: boolean | number | string;
@@ -295,12 +273,12 @@ class HostComponent implements AfterViewInit {
   @ViewChild(CodeComponent) codeComponent: CodeComponent;
 
   ngAfterViewInit() {
-    this.refresh();
+    this.setCode(oneLineCode);
   }
 
-  /** Updates the code component with the latest state set on the host component. */
-  refresh() {
-    this.codeComponent.updateCode(this.code);
+  /** Changes the displayed code on the code component. */
+  setCode(code: string) {
+    this.codeComponent.code = code;
   }
 }
 

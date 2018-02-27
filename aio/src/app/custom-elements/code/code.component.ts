@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild, Input } from '@angular/core';
+import { Component, ElementRef, ViewChild, Input, OnChanges } from '@angular/core';
 import { Logger } from 'app/shared/logger.service';
 import { PrettyPrinter } from './pretty-printer.service';
 import { CopierService } from 'app/shared/copier.service';
@@ -45,11 +45,24 @@ const DEFAULT_LINE_NUMS_COUNT = 10;
     </pre>
     `
 })
-export class CodeComponent {
+export class CodeComponent implements OnChanges {
   ariaLabel = '';
 
   /** The code to be copied when clicking the copy button, this should not be HTML encoded */
   private codeText: string;
+
+  /** Code that should be formatted with current inputs and displayed in the view. */
+  set code(code: string) {
+    this._code = code;
+
+    if (!this._code || !this._code.trim()) {
+      this.showMissingCodeMessage();
+    } else {
+      this.formatDisplayedCode();
+    }
+  }
+  get code(): string { return this._code; }
+  _code: string;
 
   /** Whether the copy button should be shown. */
   @Input() hideCopy: boolean;
@@ -89,19 +102,21 @@ export class CodeComponent {
     private copier: CopierService,
     private logger: Logger) {}
 
-  updateCode(code: string) {
-    if (!code || !code.trim()) {
-      this.showMissingCodeMessage();
-      return;
+  ngOnChanges() {
+    // If some inputs have changed and there is code displayed, update the view with the latest
+    // formatted code.
+    if (this.code) {
+      this.formatDisplayedCode();
     }
+  }
 
-    code = leftAlign(code);
-    this.setCodeHtml(code); // start with unformatted code
+  private formatDisplayedCode() {
+    const leftAlignedCode = leftAlign(this.code);
+    this.setCodeHtml(leftAlignedCode); // start with unformatted code
     this.codeText = this.getCodeText(); // store the unformatted code as text (for copying)
 
-    this.pretty.formatCode(code, this.language, this.getLinenums(code)).subscribe(
-        formattedCode => this.setCodeHtml(formattedCode),
-        err => { /* ignore failure to format */ }
+    this.pretty.formatCode(leftAlignedCode, this.language, this.getLinenums(leftAlignedCode))
+        .subscribe(c => this.setCodeHtml(c), err => { /* ignore failure to format */ }
     );
   }
 

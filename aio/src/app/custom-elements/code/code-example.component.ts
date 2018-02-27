@@ -86,7 +86,6 @@ export class CodeExampleComponent implements AfterViewInit {
   @ViewChild(CodeComponent) aioCode: CodeComponent;
 
   ngAfterViewInit() {
-    this.code = this.content.nativeElement.innerHTML;
-    this.aioCode.updateCode(this.code);
+    this.aioCode.code = this.content.nativeElement.innerHTML;
   }
 }
