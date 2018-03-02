@@ -9,7 +9,9 @@
 import {Subscription} from 'rxjs/Subscription';
 
 import {NgElementStrategy, NgElementStrategyFactory} from './element-strategy';
-import {createCustomEvent} from './utils';
+import {camelToDashCase, createCustomEvent} from './utils';
+import {ComponentFactoryResolver, Injector, Type} from '@angular/core';
+import {ComponentFactoryNgElementStrategyFactory} from './component-factory-strategy';
 
 /**
  * Class constructor based on an Angular Component to be used for custom element registration.
@@ -73,28 +75,43 @@ export interface NgElementConfig {
  *
  * @experimental
  */
-export function createNgElementConstructor<P>(config: NgElementConfig): NgElementConstructor<P> {
+export function createNgElementConstructor<P>(component: Type<any>, injector: Injector, config?: NgElementConfig): NgElementConstructor<P> {
+  const componentFactoryResolver = injector.get(ComponentFactoryResolver) as ComponentFactoryResolver;
+  const componentFactory = componentFactoryResolver.resolveComponentFactory(component);
+
+  const attributeToPropertyInputs = new Map<string, string>();
+  componentFactory.inputs.forEach(({propName, templateName}) => {
+    const attr = camelToDashCase(templateName);
+    attributeToPropertyInputs.set(attr, propName);
+  });
+
+  config = {
+    strategyFactory: new ComponentFactoryNgElementStrategyFactory(componentFactory, injector),
+    propertyInputs: componentFactory.inputs.map(({propName}) => propName),
+    attributeToPropertyInputs,
+  };
+
   class NgElementImpl extends NgElement {
-    static readonly observedAttributes = Array.from(config.attributeToPropertyInputs.keys());
+    static readonly observedAttributes = Array.from(config!.attributeToPropertyInputs.keys());
 
     constructor(strategyFactoryOverride?: NgElementStrategyFactory) {
       super();
 
       // Use the constructor's strategy factory override if it is present, otherwise default to
       // the config's factory.
-      const strategyFactory = strategyFactoryOverride || config.strategyFactory;
+      const strategyFactory = strategyFactoryOverride || config!.strategyFactory;
       this.ngElementStrategy = strategyFactory.create();
     }
 
     attributeChangedCallback(
         attrName: string, oldValue: string|null, newValue: string, namespace?: string): void {
-      const propName = config.attributeToPropertyInputs.get(attrName) !;
+      const propName = config!.attributeToPropertyInputs.get(attrName) !;
       this.ngElementStrategy.setPropertyValue(propName, newValue);
     }
 
     connectedCallback(): void {
       // Take element attribute inputs and set them as inputs on the strategy
-      config.attributeToPropertyInputs.forEach((propName, attrName) => {
+      config!.attributeToPropertyInputs.forEach((propName, attrName) => {
         const value = this.getAttribute(attrName);
         if (value) {
           this.ngElementStrategy.setPropertyValue(propName, value);
