@@ -44,10 +44,10 @@ export class ElementsLoader {
     return this.moduleFactoryLoader.load(modulePath).then(elementModuleFactory => {
       if (!this.elementsToLoad.has(selector)) { return; }
 
-      const injector = this.moduleRef.injector;
-      const elementModuleRef = elementModuleFactory.create(injector);
-      const Component = elementModuleRef.instance.customElementComponent;
-      const NgElement = createNgElementConstructor(Component, elementModuleRef.injector);
+      const elementModuleRef = elementModuleFactory.create(this.moduleRef.injector);
+      const CustomElementComponent = elementModuleRef.instance.customElementComponent;
+      const NgElement =
+          createNgElementConstructor(CustomElementComponent, {injector: elementModuleRef.injector});
 
       customElements!.define(selector, NgElement);
       this.elementsToLoad.delete(selector);
