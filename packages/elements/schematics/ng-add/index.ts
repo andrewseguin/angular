@@ -29,16 +29,20 @@ function addPackageJsonDependency() {
         json[type] = {};
       }
 
-      // If not already present, add the dependency.
-      const pkg = 'document-register-element';
-      const version = '^1.7.2';
-      if (!json[type][pkg]) {
-        json[type][pkg] = version;
-      }
+      const packages: {name: string, version: string}[] = [
+        {name: 'document-register-element', version: '^1.8.1'},
+        {name: '@angular/elements', version: '^6.0.0'},
+      ];
+
+      packages.forEach(pkg => {
+        if (!json[type][pkg.name]) {
+          json[type][pkg.name] = pkg.version;
+          context.logger.log('info', `Added ${pkg.name} as a dependency.`);
+        }
+      });
 
       // Write the JSON back to package.json
       host.overwrite('package.json', JSON.stringify(json, null, 2));
-      context.logger.log('info', 'Added `document-register-element` as a dependency.');
 
       // Install the dependency
       context.addTask(new NodePackageInstallTask());
